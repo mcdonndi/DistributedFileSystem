@@ -1,0 +1,1 @@
+This is a text file that is saved on the file server. It is used to demonstrate the use of the distributed file system.
