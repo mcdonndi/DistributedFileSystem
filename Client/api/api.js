@@ -6,7 +6,7 @@ class API {
     static openFile(filePath) {
         console.log("Opening file: " + filePath);
         let xhr = new XMLHttpRequest();
-        xhr.open('GET', "http://localhost:9000" + filePath, true);
+        xhr.open('GET', "http://localhost:8000" + filePath, true);
         xhr.send();
 
         xhr.addEventListener("readystatechange", processRequest, false);
