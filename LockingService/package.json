@@ -1,0 +1,19 @@
+{
+  "name": "lockingservice",
+  "version": "1.0.0",
+  "description": "Locking service for a Distributed File System",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Locking",
+    "Service",
+    "Distributed",
+    "File",
+    "System"
+  ],
+  "author": "mcdonndi",
+  "license": "ISC"
+}
