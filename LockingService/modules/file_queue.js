@@ -1,21 +1,21 @@
 class FileQue{
     constructor(fileName) {
         this.name = fileName;
-        this.que = [];
+        this.queue = [];
     }
 
     addToQueue(clientAddress) {
-        this.que.push(clientAddress);
+        this.queue.push(clientAddress);
     }
 
     removeFromQueue(clientAddress) {
-        if(this.que[0] === clientAddress){
-            this.que.shift()
+        if(this.queue[0] === clientAddress){
+            this.queue.shift()
         }
     }
 
     getAndRemoveFirstInQueue() {
-        return this.que.shift();
+        return this.queue.shift();
     }
 }
 

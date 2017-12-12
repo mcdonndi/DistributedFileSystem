@@ -16,13 +16,13 @@ http.createServer(function (req, res) {
     let pathname = `.${parsedUrl.pathname}`;
 
     if (req.method === "GET") {
-        ls.tryLock(req.address, pathname);
-        ls.waitForKey(req.address, pathname, () => {
+        ls.tryLock(req.connection.remotePort, pathname);
+        ls.waitForKey(req.connection.remotePort, pathname, () => {
             res.setHeader('Content-type', 'text/plain');
             res.end(`File key granted for ${pathname}`);
         });
     } else if (req.method === "PUT") {
-        ls.unlock(req.address, pathname, () => {
+        ls.unlock(req.connection.remotePort, pathname, () => {
             console.log(`${pathname} unlocked`)
         })
     }

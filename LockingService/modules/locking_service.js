@@ -6,37 +6,55 @@ class LockingService {
         this.fileQueues = [];
     }
 
-    tryLock(clientAddress, filePath){
+    tryLock(clientAddress, filePath) {
         console.log(`Client ${clientAddress} attempting to lock file ${filePath}`);
-        if (this.checkForFileQueues(filePath)){
-            let fq = this.getFileQueue(filePath);
-            fq.addToQueue(clientAddress);
-        } else if (this.checkFileLocked(filePath)){
-            this.createFileQueue(clientAddress, filePath);
-        } else {
-            this.addToLockedFiles(filePath);
-        }
+        this.checkForFileQueues(filePath, (fileQueues) => {
+            if (fileQueues) {
+                console.log(`Adding ${filePath} to fileQueue`);
+                this.getFileQueue(filePath, (fq) => {
+                    fq.addToQueue(clientAddress);
+                });
+            }
+            this.checkFileLocked(filePath, (fileLocked) => {
+                if (fileLocked) {
+                    console.log(`Creating file queue for ${filePath}`);
+                    this.createFileQueue(clientAddress, filePath);
+                } else {
+                    this.addToLockedFiles(filePath);
+                }
+            });
+        });
     }
 
     waitForKey(clientAddress, filePath, cb){
-        if (this.checkForFileQueues()) {
-            while (this.clientInQueue(clientAddress, filePath)) {
-                //Do nothing
+        this.checkForFileQueues(filePath, (fileQueues) => {
+            if (fileQueues) {
+                let clientInQueueFlag = true;
+                while (clientInQueueFlag) {
+                    this.clientInQueue(clientAddress, filePath, (inQueue) =>{
+                        clientInQueueFlag = inQueue;
+                    });
+                }
             }
-        }
-        cb()
+            cb();
+        });
     }
 
     unlock(clientAddress, filePath, cb){
-        if (this.checkForFileQueues(filePath)){
-            console.log(`Client ${clientAddress} unlocking file ${filePath}`);
-            let fq = this.getFileQueue(filePath);
-            fq.removeFromQueue(clientAddress);
-            if (fq.length === 0){
-                this.removeFileQueue(filePath);
+        this.checkForFileQueues(filePath, (fileQueues) => {
+            if (fileQueues) {
+                console.log(`Client ${clientAddress} unlocking file ${filePath}`);
+                this.getFileQueue(filePath, (fq) => {
+                    fq.removeFromQueue(clientAddress);
+                    if (fq.length === 0) {
+                        this.removeFileQueue(filePath);
+                    }
+                });
+            } else {
+                this.removeFromLockedFiles(filePath);
             }
-        }
-        cb();
+            cb();
+        });
     }
 
     addToLockedFiles(filePath){
@@ -45,19 +63,25 @@ class LockingService {
 
     }
 
-    checkForFileQueues(filePath){
-        this.fileQueues.forEach((value) => {
-            if (value.name === filePath){
-                return true;
-            }
-        });
-        return false;
+    removeFromLockedFiles(filePath){
+        console.log(`Removing ${filePath} from locked files list`);
+        this.lockedFiles.shift(filePath);
     }
 
-    getFileQueue(filePath){
+    checkForFileQueues(filePath, cb){
+        let fileQueuesExist = false;
         this.fileQueues.forEach((value) => {
             if (value.name === filePath){
-                return value;
+                fileQueuesExist = true;
+            }
+        });
+        cb(fileQueuesExist);
+    }
+
+    getFileQueue(filePath, cb){
+        this.fileQueues.forEach((value) => {
+            if (value.name === filePath){
+                cb(value);
             }
         });
     }
@@ -73,28 +97,32 @@ class LockingService {
     }
 
     removeFileQueue(filePath){
-        let fq = this.getFileQueue(filePath);
-        let i = this.fileQueues.indexOf(fq);
-        this.fileQueues.splice(i, 1);
+        this.getFileQueue(filePath, (fq) => {
+            let i = this.fileQueues.indexOf(fq);
+            this.fileQueues.splice(i, 1);
+        });
     }
 
-    checkFileLocked(filePath){
+    checkFileLocked(filePath, cb){
+        let fileLocked = false;
         this.lockedFiles.forEach((value) => {
             if (value === filePath){
-                return true;
+                fileLocked = true;
             }
         });
-        return false;
+        cb(fileLocked);
     }
 
-    clientInQueue(clientAddress, filePath){
-        let fq = this.getFileQueue(filePath);
-        fq.que.forEach((value) => {
-            if (value === clientAddress){
-                return true;
-            }
+    clientInQueue(clientAddress, filePath, cb){
+        this.getFileQueue(filePath, (fq) => {
+            let clientQueing = false;
+            fq.queue.forEach((value) => {
+                if (value === clientAddress){
+                    clientQueing = true;
+                }
+            });
+            cb(clientQueing);
         });
-        return false;
     }
 }
 
