@@ -47,9 +47,9 @@ class LockingService {
 
     unlock(clientAddress, filePath, cb){
         this.checkForFileQueues(filePath, (fileQueues) => {
+            this.removeFromLockedFiles(filePath);
             if (fileQueues) {
                 console.log(`Client ${clientAddress} unlocking file ${filePath}`);
-                this.removeFromLockedFiles(filePath);
                 this.getFileQueue(filePath, (fq) => {
                     fq.removeFirstInQueue();
                     if (fq.queue.length === 0) {

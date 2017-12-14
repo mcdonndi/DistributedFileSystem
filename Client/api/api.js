@@ -7,36 +7,36 @@ class API {
         this.lockingServiceIdCookie = null;
     }
 
-    static openFile(filePath) {
+    static openFile(filePath, cb) {
         console.log("Opening file: " + filePath);
-        this._getFileLock(filePath, () => {
-            this._getFileServerPort(filePath, (portNumber) => {
-                let xhr = new XMLHttpRequest();
-                xhr.open('GET', `http://localhost:${portNumber}/${filePath}`, true);
-                xhr.send();
+        this._getFileServerPort(filePath, (portNumber) => {
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', `http://localhost:${portNumber}/${filePath}`, true);
+            xhr.send();
 
-                xhr.addEventListener("readystatechange", processRequest, false);
+            xhr.addEventListener("readystatechange", processRequest, false);
 
-                function processRequest(e) {
-                    if (xhr.readyState == 4 && xhr.status == 200) {
-                        console.log(xhr.responseText);
-                    }
+            function processRequest(e) {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    console.log(xhr.responseText);
+                    cb();
                 }
-            });
+            }
         });
     }
 
-    static closeFile(filePath) {
+    static closeFile(filePath,cb) {
         console.log("Closing file: " + filePath);
-        this._returnFileLock(filePath);
+        cb();
     }
 
-    static readFile(filePath) {
-        console.log("Reading file: " + filePath);
-    }
-
-    static writeFile(filePath) {
-        console.log("Writing to file: " + filePath);
+    static readWriteFile(rl, filePath, cb) {
+        this._retrieveFileForReadWrite(filePath, () => {
+            this._finishedWithFilePrompt(rl, () => {
+                this._returnFileLock(filePath);
+                cb();
+            });
+        });
     }
 
     static _getFileServerPort(filePath, cb) {
@@ -103,6 +103,39 @@ class API {
                 this.lockingServiceIdCookie = cookie.split('=')[1];
             }
         });
+    }
+
+    static _retrieveFileForReadWrite(filePath, cb){
+        console.log("Reading file: " + filePath);
+        this._getFileLock(filePath, () => {
+            this._getFileServerPort(filePath, (portNumber) => {
+                let xhr = new XMLHttpRequest();
+                xhr.open('GET', `http://localhost:${portNumber}/${filePath}`, true);
+                xhr.send();
+
+                xhr.addEventListener("readystatechange", processRequest, false);
+
+                function processRequest(e) {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        console.log(xhr.responseText);
+                        cb();
+                    }
+                }
+            });
+        });
+    }
+
+    static _finishedWithFilePrompt(rl, cb){
+        rl.question('Are you finished with this file? (Y/N) ', (choice) => {
+            switch (choice) {
+                case "Y":
+                    cb();
+                    break;
+                case "N":
+                    API._finishedWithFilePrompt(rl, cb);
+                    break;
+            }
+        })
     }
 }
 
