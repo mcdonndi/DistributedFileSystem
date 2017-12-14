@@ -8,35 +8,40 @@ class LockingService {
 
     tryLock(clientAddress, filePath) {
         console.log(`Client ${clientAddress} attempting to lock file ${filePath}`);
-        this.checkForFileQueues(filePath, (fileQueues) => {
-            if (fileQueues) {
-                console.log(`Adding ${filePath} to fileQueue`);
-                this.getFileQueue(filePath, (fq) => {
-                    fq.addToQueue(clientAddress);
-                });
-            }
-            this.checkFileLocked(filePath, (fileLocked) => {
-                if (fileLocked) {
+        this.checkFileLocked(filePath, (fileLocked) => {
+            this.checkForFileQueues(filePath, (fileQueues) => {
+                if (fileLocked && fileQueues) {
+                    this.clientInQueue(clientAddress, filePath, (inQueue) => {
+                        if(!inQueue) {
+                            console.log(`Adding ${clientAddress} to fileQueue`);
+                            this.getFileQueue(filePath, (fq) => {
+                                fq.addToQueue(clientAddress);
+                            });
+                        }
+                    });
+                } else if (fileLocked && !fileQueues) {
                     console.log(`Creating file queue for ${filePath}`);
                     this.createFileQueue(clientAddress, filePath);
-                } else {
+                } else if (!fileLocked && !fileQueues) {
                     this.addToLockedFiles(filePath);
                 }
             });
         });
     }
 
-    waitForKey(clientAddress, filePath, cb){
+    tryGetKey(clientAddress, filePath, cb) {
         this.checkForFileQueues(filePath, (fileQueues) => {
+            let grantKey = false;
             if (fileQueues) {
-                let clientInQueueFlag = true;
-                while (clientInQueueFlag) {
-                    this.clientInQueue(clientAddress, filePath, (inQueue) =>{
-                        clientInQueueFlag = inQueue;
-                    });
-                }
+                this.clientInQueue(clientAddress, filePath, (inQueue) => {
+                    if (!inQueue) {
+                        grantKey = true;
+                    }
+                });
+            } else {
+                grantKey = true;
             }
-            cb();
+            cb(grantKey);
         });
     }
 
@@ -44,14 +49,13 @@ class LockingService {
         this.checkForFileQueues(filePath, (fileQueues) => {
             if (fileQueues) {
                 console.log(`Client ${clientAddress} unlocking file ${filePath}`);
+                this.removeFromLockedFiles(filePath);
                 this.getFileQueue(filePath, (fq) => {
-                    fq.removeFromQueue(clientAddress);
-                    if (fq.length === 0) {
+                    fq.removeFirstInQueue();
+                    if (fq.queue.length === 0) {
                         this.removeFileQueue(filePath);
                     }
                 });
-            } else {
-                this.removeFromLockedFiles(filePath);
             }
             cb();
         });

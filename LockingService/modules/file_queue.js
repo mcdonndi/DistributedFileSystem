@@ -1,4 +1,4 @@
-class FileQue{
+class FileQueue{
     constructor(fileName) {
         this.name = fileName;
         this.queue = [];
@@ -8,15 +8,9 @@ class FileQue{
         this.queue.push(clientAddress);
     }
 
-    removeFromQueue(clientAddress) {
-        if(this.queue[0] === clientAddress){
-            this.queue.shift()
-        }
-    }
-
-    getAndRemoveFirstInQueue() {
-        return this.queue.shift();
+    removeFirstInQueue() {
+        this.queue.shift()
     }
 }
 
-module.exports = FileQue;
+module.exports = FileQueue;
