@@ -1,0 +1,6 @@
+These files can be:
+Opened,
+Read,
+Edited,
+and Closed.
+Again... Sorry I ran out of ideas
