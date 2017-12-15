@@ -36,10 +36,12 @@ class API {
     }
 
     static readWriteFile(rl, filePath, cb) {
-        this._retrieveFileForReadWrite(filePath, () => {
-            this._finishedWithFilePrompt(rl, () => {
-                this._returnFileLock(filePath);
-                cb();
+        this._retrieveFileForReadWrite(filePath, (fileText, portNumber) => {
+            this._EditFile(rl, fileText, (fileContents) => {
+                this._writeToFileServer(fileContents, portNumber, filePath, () => {
+                    this._returnFileLock(filePath);
+                    cb();
+                });
             });
         });
     }
@@ -123,24 +125,57 @@ class API {
                 function processRequest(e) {
                     if (xhr.readyState == 4 && xhr.status == 200) {
                         console.log(xhr.responseText);
-                        cb();
+                        cb(xhr.responseText, portNumber);
                     }
                 }
             });
         });
     }
 
-    static _finishedWithFilePrompt(rl, cb){
-        rl.question('Are you finished with this file? (Y/N) ', (choice) => {
+    static _EditFile(rl, fileText, cb){
+        rl.question('Would you like to:\n1) Change all contents of the file?\n2) Append to the end of the file?\n', (choice) => {
             switch (choice) {
-                case "Y":
-                    cb();
+                case "1":
+                    this._changeFileContents(rl, (fileContents) => {
+                        cb(fileContents);
+                    });
                     break;
-                case "N":
-                    API._finishedWithFilePrompt(rl, cb);
+                case "2":
+                    this._appendFile(rl, fileText, (fileContents) => {
+                        cb(fileContents);
+                    });
                     break;
             }
         })
+    }
+
+    static _changeFileContents(rl, cb){
+        rl.question('Write the new file contents:\n', (fileContents) => {
+            cb(fileContents);
+        })
+    }
+
+    static _appendFile(rl, fileText, cb){
+        rl.question('Write the new file contents:\n', (appendedText) => {
+            let fileContents = fileText + appendedText;
+            cb(fileContents);
+        })
+    }
+
+    static _writeToFileServer(fileContents, portNumber, filePath, cb){
+        console.log("Writing to File Server");
+        let xhr = new XMLHttpRequest();
+        xhr.open('PUT', `http://localhost:${portNumber}/${filePath}`, true);
+        xhr.send(fileContents);
+
+        xhr.addEventListener("readystatechange", processRequest, false);
+
+        function processRequest(e) {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                console.log(`${filePath} Updated in file server`);
+                cb();
+            }
+        }
     }
 }
 

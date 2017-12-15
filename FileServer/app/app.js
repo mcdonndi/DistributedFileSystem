@@ -10,6 +10,17 @@ http.createServer(function (req, res) {
     const parsedUrl = url.parse(req.url);
     // extract URL path
     let pathname = `.${parsedUrl.pathname}`;
+
+    if(req.method === 'GET'){
+        getRequest(pathname, res);
+    } else if (req.method === 'PUT'){
+        putRequest(pathname, req, res);
+    }
+
+}).listen(parseInt(port));
+console.log(`Server listening on port ${port}`);
+
+getRequest = (pathname, res) => {
     // maps file extention to MIME types
     const mimeType = {
         '.ico': 'image/x-icon',
@@ -52,5 +63,24 @@ http.createServer(function (req, res) {
             }
         });
     });
-}).listen(parseInt(port));
-console.log(`Server listening on port ${port}`);
+};
+
+putRequest = (pathname, req, res) => {
+    let body = '';
+
+    req.on('data', (data) => {
+        body += data;
+
+        // Too much POST data, kill the connection!
+        // 1e6 === 1 * Math.pow(10, 6) === 1 * 1000000 ~~~ 1MB
+        if (body.length > 1e6)
+            req.connection.destroy();
+
+        fs.writeFile(`${pathname}`, body, (err) => {
+            if (err) throw err;
+            console.log(`${pathname} has been updated`);
+            res.setHeader('Content-type', 'text/plain');
+            res.end('SUCCESS')
+        });
+    });
+};
