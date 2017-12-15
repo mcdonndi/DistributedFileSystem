@@ -1,6 +1,9 @@
 "use strict";
 
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+const Cache = require("../cache/cache");
+
+let cache = new Cache();
 
 class API {
     constructor() {
@@ -19,6 +22,7 @@ class API {
             function processRequest(e) {
                 if (xhr.readyState == 4 && xhr.status == 200) {
                     console.log(xhr.responseText);
+                    cache.addFileToCache(filePath, xhr.responseText);
                     cb();
                 }
             }

@@ -60,3 +60,6 @@ typings/
 
 # Intellij
 *.idea/
+
+# Cache
+cache/files/*
