@@ -1,7 +1,7 @@
 const readline = require('readline');
 const API = require("../api/api.js");
 
-const PROMPT = 'Hello. What would you like to do?\n1) Open file\n2) Close file\n3) Read and write to file\n\nType "quit" to quit\n';
+const PROMPT = 'Hello. What would you like to do?\n1) Open file\n2) Close file\n3) Read and write to file\n\nType "quit" to quit\n\n';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -17,7 +17,7 @@ rl.on('line', (choice) => {
             console.log("Option 1 selected");
             getFilePath((filePath) => {
                 API.openFile(filePath, () => {
-                    rl.prompt();
+                    repeatApplication(rl);
                 });
             });
             break;
@@ -25,7 +25,7 @@ rl.on('line', (choice) => {
             console.log("Option 2 selected");
             getFilePath((filePath) => {
                 API.closeFile(filePath, () => {
-                    rl.prompt();
+                    repeatApplication(rl);
                 });
             });
             break;
@@ -33,7 +33,7 @@ rl.on('line', (choice) => {
             console.log("Option 3 selected");
             getFilePath((filePath) => {
                 API.readWriteFile(rl, filePath, () => {
-                    rl.prompt();
+                    repeatApplication(rl);;
                 });
             });
             break;
@@ -53,5 +53,20 @@ rl.on('line', (choice) => {
 getFilePath = (cb) => {
     rl.question('Please enter file path: ', (fPath) => {
         cb(fPath);
+    });
+};
+
+repeatApplication = (rl) => {
+    rl.question('\n\nWould you like to make another selection? (Y/N)', (answer) => {
+        switch (answer) {
+            case 'Y':
+                rl.prompt();
+                break;
+            case 'N':
+                rl.close();
+                break;
+            default:
+                repeatApplication(rl);
+        }
     });
 };
