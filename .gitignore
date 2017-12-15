@@ -62,4 +62,4 @@ typings/
 *.idea/
 
 # Cache
-cache/files/*
+./Client/cache/files/*
